@@ -82,3 +82,85 @@ cor.test(res$Challenged_ResAbund, res$Shannon,
 wild <- subset(df1_control_Lacto, df1_control_Lacto$Domcat == "wild")
 cor.test(wild$Challenged_ResAbund, wild$Shannon,
          method = "spearman", exact=FALSE, na.action=na.exclude, p.adjust.method="BH") 
+
+sample_data(CR_16S_clean)$Richness <- estimate_richness(CR_16S_clean, measure=c("Observed"))$Observed
+df2 <- data.frame(sample_data(CR_16S_clean))
+df2_clean <- subset(df2, df2$Treatment != "fecal")
+df2_clean <- subset(df2_clean, df2_clean$Challenger != "N/A")
+df2_control <- subset(df2_clean, df2_clean$Treatment == "control")
+df2_control$Domcat <- factor(df2_control$Domcat, levels=c("wild","free-ranging domestic","research","industrial"))
+df2_control <- subset(df2_control, df2_control$Challenged_ResAbund != "N/A")
+df2_control$Challenged_ResAbund <- as.numeric(df2_control$Challenged_ResAbund)
+
+# E.coli
+df2_control_Ecoli <- subset(df2_control, df2_control$Challenger == "E.coli")
+df2_control_Ecoli_clean <- subset(df2_control_Ecoli, df2_control_Ecoli$Challenged_ResAbund != 0)
+Richness_inv_abundance_Ecoli <- ggplot(df2_control_Ecoli, aes(Richness, log(Challenged_ResAbund))) + geom_point(size=3) + theme_bw() + stat_poly_line() +
+  theme(axis.title.x = element_blank()) + ylab("E.coli abundance (challenged (log))") + theme(text = element_text(size = 20)) 
+Richness_inv_abundance_Ecoli 
+cor.test(df2_control_Ecoli$Challenged_ResAbund, df2_control_Ecoli$Richness,
+                                            method = "spearman", exact=FALSE, na.action=na.exclude) 
+
+# S.enterica
+df2_control_Sal <- subset(df2_control, df2_control$Challenger == "S.enterica")
+df2_control_Sal$Challenged_ResAbund <- as.numeric(df2_control_Sal$Challenged_ResAbund)
+Richness_inv_abundance_Sal <- ggplot(df2_control_Sal, aes(Richness, Challenged_ResAbund)) + geom_point(size=4) + scale_y_log10() + theme_bw() + 
+  ylab("S.enterica abundance (challenged)") + theme(axis.title.x = element_blank()) + theme(text = element_text(size = 25)) 
+Richness_inv_abundance_Sal 
+cor.test(df2_control_Sal$Challenged_ResAbund, df2_control_Sal$Richness,
+                                          method = "spearman", exact=FALSE, na.action=na.exclude) 
+# S.enterica, by domestication context 
+Richness_inv_abundance_Sal_domcat <- ggplot(df2_control_Sal, aes(Richness, Challenged_ResAbund, color=Domcat)) + geom_point(size=4) + scale_y_log10() + theme_bw() + stat_poly_line(data=subset(df2_control_Sal, Domcat=="industrial"),                                                                 aes(Richness,Challenged_ResAbund,color=factor(Domcat)),se=FALSE) + 
+  theme(text = element_text(size = 20)) + ylab("S.enterica abundance (challenged)") + theme(axis.title.x=element_blank()) + theme(legend.title=element_blank()) + scale_color_manual(values=c("wild"="#36651e", "industrial"="#963a3a","research"="#e8aa23","free-ranging domestic"="#eb9696"))
+Richness_inv_abundance_Sal_domcat 
+
+# Spearman for frd
+frd <- subset(df2_control_Sal, df2_control_Sal$Domcat == "free-ranging domestic")
+frd$Challenged_ResAbund <- as.numeric(frd$Challenged_ResAbund)
+cor.test(frd$Challenged_ResAbund, frd$Richness,
+                                 method = "spearman", exact=FALSE, na.action=na.exclude) 
+# Spearman for ind
+ind <- subset(df2_control_Sal, df2_control_Sal$Domcat == "industrial")
+ind$Challenged_ResAbund <- as.numeric(ind$Challenged_ResAbund)
+cor.test(ind$Challenged_ResAbund, ind$Richness,
+                                 method = "spearman", exact=FALSE, na.action=na.exclude) 
+# Spearman for res
+res <- subset(df2_control_Sal, df2_control_Sal$Domcat == "research")
+cor.test(res$Challenged_ResAbund, res$Richness,
+         method = "spearman", exact=FALSE, na.action=na.exclude) 
+# Spearman for wild
+wild <- subset(df2_control_Sal, df2_control_Sal$Domcat == "wild")
+cor.test(wild$Challenged_ResAbund, wild$Richness,
+         method = "spearman", exact=FALSE, na.action=na.exclude) 
+
+# L.reuteri
+df2_control_Lacto <- subset(df2_control, df2_control$Challenger == "L.reuteri")
+df2_control_Lacto$Challenged_ResAbund <- as.numeric(df2_control_Lacto$Challenged_ResAbund)
+Richness_inv_abundance_Lacto <- ggplot(df2_control_Lacto, aes(Richness, Challenged_ResAbund)) + geom_point(size=4) + scale_y_log10() + theme_bw() +
+  theme(axis.title.x=element_blank()) + ylab("L.reuteri abundance (challenged)") + theme(text = element_text(size = 25)) 
+Richness_inv_abundance_Lacto
+cor.test(df2_control_Lacto$Challenged_ResAbund, df2_control_Lacto$Richness,
+                                          method = "spearman", exact=FALSE, na.action=na.exclude) 
+
+# by domestication context
+Richness_inv_abundance_Lacto_domcat <- ggplot(df2_control_Lacto, aes(Richness, Challenged_ResAbund, color=Domcat)) + geom_point(size=4) + scale_y_log10() + theme_bw() + stat_poly_line(data=subset(df2_control_Lacto, Domcat=="free-ranging domestic" | Domcat=="industrial"),
+aes(Richness,Challenged_ResAbund,color=factor(Domcat)),se=FALSE) + 
+  theme(text = element_text(size = 20)) + ylab("L.reuteri abundance (challenged)") + theme(axis.title.x=element_blank()) + theme(legend.title=element_blank()) + scale_color_manual(values=c("wild"="#36651e", "industrial"="#963a3a","research"="#e8aa23","free-ranging domestic"="#eb9696"))
+Richness_inv_abundance_Lacto_domcat
+
+# Spearman for frd
+frd <- subset(df2_control_Lacto, df2_control_Lacto$Domcat == "free-ranging domestic")
+cor.test(frd$Challenged_ResAbund, frd$Richness,
+         method = "spearman", exact=FALSE, na.action=na.exclude) 
+# Spearman for ind
+ind <- subset(df2_control_Lacto, df2_control_Lacto$Domcat == "industrial")
+cor.test(ind$Challenged_ResAbund, ind$Richness,
+         method = "spearman", exact=FALSE, na.action=na.exclude) 
+# Spearman for res
+res <- subset(df2_control_Lacto, df2_control_Lacto$Domcat == "research")
+cor.test(res$Challenged_ResAbund, res$Richness,
+         method = "spearman", exact=FALSE, na.action=na.exclude) 
+# Spearman for wild
+wild <- subset(df2_control_Lacto, df2_control_Lacto$Domcat == "wild")
+cor.test(wild$Challenged_ResAbund, wild$Richness,
+         method = "spearman", exact=FALSE, na.action=na.exclude) 
