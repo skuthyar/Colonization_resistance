@@ -6,4 +6,4 @@ The qPCR folder includes the following: a file of invader abundances in media ty
 
 The 16S control folder includes the following: the metadata file, the ASV counts file, the ASV taxonomy file (both of which were generated with dada2), and the scripts for testing if initial microbiome composition and diversity predicted invader susceptibility. The 16S challenged folder uses the same metadata, ASV counts, and ASV taxonomy files as the 16S control folder but includes scripts that analyze if and how microbial communities changed after invasion. 
 
-The machine learning folder includes the following: the phyloseq object and a R markdown file that was used for the random forest model. 
+The machine learning folder includes the R script that was used for the random forest model. 
