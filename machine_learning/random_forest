@@ -1,0 +1,119 @@
+otu_table <- as.data.frame(otu_table(CR_16S_clean))
+metadata <- sample_data(CR_16S_clean)
+
+# Remove NAs
+metadata_clean <- subset(metadata, metadata$Challenger != "N/A") # Ensure it's a factor
+metadata_clean <- subset(metadata_clean, metadata_clean$Challenger != "fecal")
+metadata_clean <- subset(metadata_clean, metadata_clean$Treatment != "abx_challenged")
+# Filter out controls 
+metadata_chall <- subset(metadata_clean, metadata_clean$Treatment != "control")
+# Get common sample names
+common_samples <- intersect(rownames(metadata_chall), rownames(otu_table))
+
+# Filter both metadata and OTU table to keep only common samples
+metadata_filtered <- metadata_chall[common_samples, ]
+otu_table_filtered <- otu_table[common_samples, ]
+
+# Combine the filtered data
+data_combined <- cbind(metadata_filtered, otu_table_filtered)
+
+set.seed(123) # For reproducibility
+train_index <- createDataPartition(data_combined$Challenger, p = 0.8, list = FALSE)
+train_data <- data_combined[train_index, ]
+test_data <- data_combined[-train_index, ]
+
+# Remove the invader column for the model
+train_x <- train_data %>% select(where(is.numeric)) 
+
+train_y <- train_data$Challenger
+
+# Fit the model
+rf_model <- randomForest(x = train_x, y = train_y, ntree = 100, importance = TRUE)
+
+# Check the model
+print(rf_model)
+
+test_x <- test_data %>% select(where(is.numeric))
+test_y <- test_data$Challenger
+
+predictions <- predict(rf_model, newdata = test_x)
+confusion_matrix <- table(predictions, test_y)
+print(confusion_matrix)
+
+confusionMatrix(confusion_matrix)
+feature_import <- importance(rf_model)
+varImpPlot(rf_model)
+
+
+feature_import <- as.data.frame(feature_import)
+library(reshape2)
+
+# Heatmap for class-specific importance
+feature_import_matrix <- as.matrix(feature_import_1[, 1:3])
+
+library(caret)
+
+confusion_matrix <- table(predictions, test_y)
+confusionMatrix(confusion_matrix) # To get the matrix summary
+
+# Plotting the confusion matrix
+library(ggplot2)
+
+ggplot(as.data.frame(confusion_matrix), aes(x = predictions, y = test_y)) +
+  geom_tile(aes(fill = Freq), color = "white") +
+  scale_fill_gradient(low = "white", high = "blue") +
+  labs(title = "Confusion Matrix", x = "Predicted", y = "Actual") +
+  theme_minimal()
+
+# by domestication status
+# Initialize an empty list to store results
+domestication_status <- unique(data_combined$Domcat)  # List of domestication statuses
+results <- list()  # Initialize an empty list to store results
+
+# Loop through each domestication status
+for (status in domestication_status) {
+  cat("Processing:", status, "\n")
+  
+  # Subset the data for the current domestication status
+  data_combined_subset <- data_combined %>% filter(Domcat == status)  # Adjust as necessary
+  
+  # Remove rows with missing values in 'Challenger' and other relevant columns
+  data_combined_subset <- na.omit(data_combined_subset)
+  
+  # Check if there's enough data
+  if (nrow(data_combined_subset) < 10) {  # Adjust threshold as needed
+    cat("Not enough data for", status, "\n")
+    next
+  }
+  
+  # Ensure 'Challenger' is a factor
+  data_combined_subset$Challenger <- as.factor(data_combined_subset$Challenger)
+  
+  # Check unique values in 'Challenger'
+  if (length(unique(data_combined_subset$Challenger)) <= 1) {
+    cat("Not enough unique values in Challenger for", status, "\n")
+    next
+  }
+  
+  # Split the data
+  set.seed(42)
+  trainIndex <- createDataPartition(data_combined_subset$Challenger, p = .8, list = FALSE, times = 1)
+  df_train <- data_combined_subset[trainIndex, ]
+  df_test <- data_combined_subset[-trainIndex, ]
+  
+  # Train Random Forest Model
+  rf_model <- randomForest(Challenger ~ ., data = df_train, importance = TRUE, ntree = 100)
+  
+  # Evaluate Model
+  predictions <- predict(rf_model, df_test)
+  cm <- confusionMatrix(predictions, df_test$Challenger)
+  
+  # Store results
+  results[[status]] <- list(model = rf_model, confusion_matrix = cm, importance = importance(rf_model))
+  
+  # Print confusion matrix
+  print(cm)
+  
+  # Optionally plot feature importance
+  varImpPlot(rf_model, main = paste("Variable Importance for", status))
+}
